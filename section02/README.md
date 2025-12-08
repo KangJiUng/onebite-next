@@ -1,40 +1,60 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## 섹션 2: Page Router 핵심 정리
 
-## Getting Started
+- Page Router의 장점
+    1. 파일 시스템 기반의 간편한 페이지 라우팅 제공
+        1. pages 폴더 구조를 기반으로 편리하고 간편한 페이지 라우팅 처리가 가능
+        2. 동적 페이지의 경우 대괄호를 이용하여 페이지 라우팅 가능
+            - `[id]`.tsx: 하나의 URL 파라미터에 대응
+            - `[…id]`.tsx: 여러 개의 URL 파라미터에 대응(ex-/123/123/123…)
+            - `[[…id]]`.tsx: Optional Catch All Segment, 인덱스 페이지 포함
+    2. 다양한 방식의 사전 렌더링 제공
+        1. 서버사이드 렌더링(SSR): 요청이 들어올 때마다 사전 렌더링 진행
+            1. 장점: 매변 새롭게 페이지를 생성하기 때문에 항상 최신의 데이터를 보장
+            2. 단점: 페이지를 새롭게 생성하는 과정에서 딜레이가 발생하면 상황에 따라 응답 속도가 크게 느려질 수 있음
+        2. 정적 사이트 생성(SSG): 빌드 타임에 미리 페이지를 사전 렌더링 해둠
+            1. 장점: 페이지를 미리 생성해두는 과정이 빌드 타임에만 일어나는 일이기 때문에 사용자 입장에서는 매우 빠른 속도로 응답 받음 ⇒ 앞선 SSR 방식의 문제점을 효과적으로 해결
+            2. 단점: 빌드 타임 이후에는 페이지를 다시는 재생성하지 않기 때문에 최신 데이터를 반영하기 어려움
+        3. 증분 정적 재생성(ISR): SSG 페이지 일정 시간마다 재생성
+            1. 유저의 특정 행동 이후에만 페이지를 다시 생성해야하는 상황에는 On-Demand 방식 사용(Revalidate 요청)
+            2. 장점: 빌드 시 생성된 정적 페이지를 일정 간격(또는 요청 시)으로 재생성하여 최신 데이터를 반영할 수 있음
 
-First, run the development server:
+- Page Router의 단점
+    1. 페이지별 레이아웃 설정이 번거롭다
+        1. 레이아웃이 적용되길 원하는 페이지마다 getLayout 메서드를 매번 새롭게 설정해줘야했
+        2. 페이지별 레이아웃의 설정이 많아지게 된다면 코드의 중복 발생, 불필요하게 복잡하고 어려움
+        
+        ```tsx
+        export default function App({
+         Component, pageProps,
+        }: AppProps & {
+         Component: NextPageWithLayout;
+         const getLayout = Component.getLayout ?? ((page: ReactNode) => page);
+        
+         return (
+        	‹GlobalLayout>
+        	{getLayout (<Component {...pageProps} />)}
+        	</GlobalLayout>
+        )
+        ```
+        
+    2. 데이터 페칭이 페이지 컴포넌트에 집중된다
+        1. 특정 페이지에 필요한 데이터를 사전 렌더링 과정에서 서버 측에서 불러오도록 설정하려면 `getServerSideProps`나 `getStaticProps` 같은 함수들을 이용해서 데이터를 서버로부터 불러온 뒤 그 불러온 데이터들을 페이지 컴포넌트들에게 props 형태로 전달을 해줬어야함
+        2. 페이지 컴포넌트에게 props로써 전달이 되는 구조를 따르기 때문에 만약 우리가 페이지 컴퍼넌트 아래 자식 컴퍼넌트들이 있고 그리고 이 자식 컴퍼넌트들이 서버에서 불러온 데이터를 활용해야 되는 상황이라면 당연히 페이지 컴포넌트로부터 데이터를 전달을 받아야 함 ⇒ 너무 복잡함
+    3. 불필요한 컴포넌트들도 JS Bundle에 포함된다
+        1. 불필요한 컴포넌트? ⇒ 상호작용이 없는, 필요하지 않은 컴포넌트라 서버에서만 한 번 실행되면 끝나는 컴포넌트
+            1. JS Bundle을 전달받아 진행되는 Hydration은 상호작용을 위해 진행됨
+        2. 상호작용이 있든 없든 구분없이 하나의 자바스크립트 번들에 묶어서 브라우저에게 그대로 전달하기 때문에 자바스크립트 번들의 용량이 불필요하게 커지게 됨 → TTI에 걸리는 시간도 늦어지게 됨
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js 페이지 라우터에서 페이지 간 클라이언트 측 네비게이션을 위해 권장되는 컴포넌트는 `next/link`에서 제공하는 `Link` 컴포넌트
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Pre-Fetching
+    - 사전렌더링은 현재 페이지만 불러오는 기능 ⇒ 현재 페이지에서 링크를 통해 이동할 수 있는 모든 페이지들을 사전에 불러와 놓을 수 있도록 pre-fetching 사용
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+- 전역(Global) CSS를 가져와서 적용할 수 있는 파일은 오직 `pages/_app.tsx` 파일
+    - 별도의 페이지 파일에서 css를 그대로 불러와서 import하게 되면 다른 페이지에서 작성된 css 코드와 충돌을 일으킬 수 있기 때문
+    - CSS Module 기능 활용 ⇒ css 파일에 작성해둔 클래스 네임이 다른 css 파일과 중복되지 않도록 자동으로 유니크한 이름으로 변환시켜주는 기능
+        - `name.module.css` 방식으로 파일명을 지정
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- 글로벌 레이아웃을 설정하려면 루트 컴포넌트인 App 컴포넌트에서 레이아웃을 적용
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- 페이지 라우터 애플리케이션의 SEO를 개선하기 위해 각 페이지의 `<head>` 태그 내용을 관리하는 데 사용되는 컴포넌트는 `<Head>`
