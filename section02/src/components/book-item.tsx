@@ -10,7 +10,7 @@ export default function BookItem({
   author,
   publisher,
   coverImgUrl,
-}): BookData {
+}: BookData) {
   return (
     <Link href={`/book/${id}`} className={style.container}>
       <img src={coverImgUrl} />
