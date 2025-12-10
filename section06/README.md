@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 섹션 6: 스트리망과 에러핸들링
 
-## Getting Started
+- 스트리밍(Streaming)
+    - 서버에서 클라이언트로 데이터를 넘겨줘야할 때 이 데이터의 크기가 너무 크거나 준비하는 데 걸리는 시간이 오래 걸리게 되어서 데이터를 빠르게 전송하기 어려울 때 데이터를 여러 개의 조각으로 쪼개어 하나씩 클라이언트에게 전송하는 기술
+    - Next.js가 자체적으로 스트리밍 기능 제공
+        - 비동기적으로 데이터를 불러오는 컴포넌트를 제외하고 즉시 렌더링이 가능한 컴포넌트의 결과를 빠르게 브라우저에게 응답 → 비동기적 컴포넌트는 대체 UI 먼저 → 화면에 렌더링
+        - 사용자 입장에서 좀 더 좋은 환경에서 인내심을 가질 수 있도록 함
+        
+        <img width="500" height="250" alt="image" src="https://github.com/user-attachments/assets/b7743b7f-e538-4445-a0c9-49a8fe6e7acf" />
 
-First, run the development server:
+        
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- `loading.tsx`
+    - 특정 경로의 페이지 컴포넌트에 스트리밍을 자동으로 적용하고 로딩 중 대체 UI를 보여주기 위해 사용하는 규약 파일
+    - 스트리밍하려는 페이지 컴포넌트와 동일한 위치의 폴더에 생성
+    - 주의 사항
+        1. 해당 경로 아래에 있는 모든 비동기 페이지 컴포넌트들이 다 스트리밍되도록 설정됨(like layout)
+        2. loading.tsx 파일이 스트리밍하도록 설정하는 페이지 컴포넌트는 async 키우드가 붙어서 비동기로 작동하도록 설정된 페이지 컴포넌트에만 스트리밍을 제공함
+        3. loading.tsx 파일은 무조건 페이지 컴포넌트들에만 스트리밍을 적용함
+            1. 일반적인 컴포넌트(Components 폴더 안의…)들에는 스트리밍 설정이 불가함 → 리액트의 Suspense 사용하면 가능
+        4. loading.tsx 파일로 설정된 스트리밍은 브라우저에서 쿼리 스트링이 변경될 때에는 트리거링되지 않음(페이지의 경로가 바뀐 것이 아니기 때문) → 리액트의 Suspense 사용하면 가능
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Suspense
+    - 페이지 컴포넌트가 아닌 특정 자식 컴포넌트 단위로 비동기 작업(예: 데이터 페칭) 중 로딩 상태를 관리하고 스트리밍을 구현하기 위해 React에서 제공하는 기능
+    - Suspense로 비동기 컴포넌트를 감싸면 해당하는 컴포넌트를 스트리밍하도록 설정해서 로딩 상태로 남겨 놓음
+    - fallback이라는 props로 대체 UI 설정 및 key에 쿼리 스트링 값 설정 → loading.tsx 파일로 불가능했던 기능 가능
+        - 원리: Suspense 컴포넌트는 최초로 한번 내부 컴포넌트의 로딩이 완료된 이후에는 이 내부에 어떠한 컨텐츠가 변경된다 라고 하더라도 기본적으로는 새롭게 다시 로딩 상태로 돌아가지 않음 → 아예 key 값을 바꿔서 컴포넌트 자체를 새로운 컴포넌트로 인식하도록 만듦
+    
+    ```tsx
+    export default function Page({searchParams｝：｛
+    searchParams: {q?: string;}: {
+    	return (
+    	<Suspense key={searchParams.q || ""} fallback={<div>Loading ...</div>}>>
+    		<SearchResult q={searchParams.q || ""} />
+    	</Suspense>
+    	);
+    }
+    ```
+    
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 스켈레톤 UI(Skeleton UI)
+    - 웹페이지에서 콘텐츠가 로딩되는 동안 실제 내용의 형태를 미리 보여주는 회색 또는 옅은 색상의 박스 형태로 구성된 UI 기법
+    - Suspense의 fallback에 전달
+    - 리액트에서 `react-loading-skeleton` 라이브러리 제공
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `error.tsx`
+    - 앱 라우터에서 특정 경로 세그먼트 또는 그 하위 경로에서 발생하는 런타임 오류를 포착하고 사용자에게 친절한 오류 페이지를 보여주기 위해 사용하는 규약 파일
+    - 현재 파일과 같은 경로에 있는 레이아웃까지만 렌더링을 시켜줌
+    - 에러를 처리할 파일과 같은 위치에 생성, `“use client”` 지시자 사용
+    - 에러 컴퍼넌트의 props로 전달되는 값
+        1. **error**: 현재 발생한 에러의 원인이나 또는 에러의 메시지를 에러 컴퍼넌트를 통해 출력하도록 만들고 싶다면 해당 값 이용
+        2. **reset**: 에러가 발생한 페이지를 복구하기 위해 다시 한 번 컴포넌트들을 렌더링 시키는 기능을 가진 함수
+            1. 클라이언트 컴포넌트만 재실행하기 때문에 데이터 페칭을 다시 수행하지는 않음
+            2. useRouter의 라우터 객체가 제공하는 `refresh` 를 사용하여 서버 컴포넌트 재실행을 요청 후 `reset` 함수를 사용하여 페이지 복구
+            
+            ```tsx
+            startTransition(() => {
+            	router.refresh(); // 현재 페이지에 필요한 서버 컴포넌트들을 다시 불러옴
+              reset();          // 에러 상태를 초기화, 컴포넌트들을 다시 렌더링
+            });
+            ```
+            
+    - 특정 페이지만을 위한 에러 페이지가 필요하면 해당 경로에 error.tsx 파일을 추가 → 상위 error.tsx 파일을 덮어 씌우게 됨
