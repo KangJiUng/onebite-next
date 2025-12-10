@@ -28,7 +28,7 @@ export async function createReviewAction(_: any, formData: FormData) {
 
     return {
       status: true,
-      content: "",
+      error: "",
     };
   } catch (err) {
     console.error(err);
