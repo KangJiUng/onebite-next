@@ -3,7 +3,6 @@ import style from "./page.module.css";
 import { BookData } from "@/types";
 import delay from "@/util/delay";
 import { Suspense } from "react";
-import BookItemSkeletion from "@/components/skeletion/book-item-skeletion";
 import BookListSkeleton from "@/components/skeletion/book-list-skeletion";
 
 // export const dynamic = "auto";
