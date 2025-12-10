@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 export async function createReviewAction(_: any, formData: FormData) {
   const bookId = formData.get("bookId")?.toString();
